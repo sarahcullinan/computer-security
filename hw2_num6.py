@@ -1,3 +1,7 @@
+#Homework 2, Number 6
+#Sarah Cullinan
+#Computer Security 
+
 from Crypto.Cipher import DES
 
 #Step 1: Generate round keys
@@ -37,7 +41,8 @@ def generate_round_keys(key):
     #there are 16 subkeys, each of which is 48 bits long 
     # drop every 8th bit and permute 
     num_keys = 16
-
+    num_bits = 48
+    
     for i in range(num_keys):
         #split the key in half, then left rotate each 
         #determine number of left shifts based on iteration number
@@ -48,8 +53,9 @@ def generate_round_keys(key):
             key_pc = key_pc[2:] + key_pc[:2]
 
         # each key is 48-bits long
+        
         #then permutated for the second time
-        round_key = ''.join([key_pc[pc_2[j]] for j in range(48)])
+        round_key = ''.join([key_pc[pc_2[j]] for j in range(num_bits)])
         round_keys.append(round_key)
 
     return round_keys
