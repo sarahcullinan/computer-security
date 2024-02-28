@@ -145,7 +145,7 @@ def generate_f_function(R_n, round_key):
         new_bits += format(s_box[i][x][y], '04b')
 
     # permutation table from slides 
-    P= [15, 6, 19, 20, 28, 11, 27, 16, 0, 14, 22, 25, 4, 17, 30, 9,
+    P = [15, 6, 19, 20, 28, 11, 27, 16, 0, 14, 22, 25, 4, 17, 30, 9,
                         1, 7, 23, 13, 31, 26, 2, 8, 18, 12, 29, 5, 21, 10, 3, 24]
 
     #calculate the final f bits as a string
