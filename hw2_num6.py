@@ -73,8 +73,88 @@ def des_ecb_decryption(ciphertext, key):
     #convert bytes to text
     deciphered_text = deciphered_bytes.decode('utf-8')
 
-    return deciphered_text
+    return deciphered_bytes, deciphered_text
 
+#find the f function for each iteration 
+def generate_f_function(R_n, round_key):
+    #utilize the expansion permutation
+    pc_expansion = [31, 0, 1, 2, 3, 4, 3, 4, 5, 6, 7, 8, 7, 8, 9, 10,
+                             11, 12, 11, 12, 13, 14, 15, 16, 15, 16, 17, 18, 19,
+                             20, 19, 20, 21, 22, 23, 24, 23, 24, 25, 26, 27, 28, 27,
+                             28, 29, 30, 31, 0]
+
+    #calculate Rn for expansion permutation
+    R_n_exp = [R_n[pc_expansion[i]] for i in range(48)]
+
+    # calculate XOR with round key (as shown in slides)
+    R = ''.join([str(int(R_n_exp[i]) ^ int(round_key[i])) for i in range(48)])
+
+     # Sboxes for each S
+    s_box = [
+        [[14, 4, 13, 1, 2, 15, 11, 8, 3, 10, 6, 12, 5, 9, 0, 7],
+         [0, 15, 7, 4, 14, 2, 13, 1, 10, 6, 12, 11, 9, 5, 3, 8],
+         [4, 1, 14, 8, 13, 6, 2, 11, 15, 12, 9, 7, 3, 10, 5, 0],
+         [15, 12, 8, 2, 4, 9, 1, 7, 5, 11, 3, 14, 10, 0, 6, 13]],
+ 
+        [[15, 1, 8, 14, 6, 11, 3, 4, 9, 7, 2, 13, 12, 0, 5, 10],
+         [3, 13, 4, 7, 15, 2, 8, 14, 12, 0, 1, 10, 6, 9, 11, 5],
+         [0, 14, 7, 11, 10, 4, 13, 1, 5, 8, 12, 6, 9, 3, 2, 15],
+         [13, 8, 10, 1, 3, 15, 4, 2, 11, 6, 7, 12, 0, 5, 14, 9]],
+ 
+        [[10, 0, 9, 14, 6, 3, 15, 5, 1, 13, 12, 7, 11, 4, 2, 8],
+         [13, 7, 0, 9, 3, 4, 6, 10, 2, 8, 5, 14, 12, 11, 15, 1],
+         [13, 6, 4, 9, 8, 15, 3, 0, 11, 1, 2, 12, 5, 10, 14, 7],
+         [1, 10, 13, 0, 6, 9, 8, 7, 4, 15, 14, 3, 11, 5, 2, 12]],
+ 
+        [[7, 13, 14, 3, 0, 6, 9, 10, 1, 2, 8, 5, 11, 12, 4, 15],
+         [13, 8, 11, 5, 6, 15, 0, 3, 4, 7, 2, 12, 1, 10, 14, 9],
+         [10, 6, 9, 0, 12, 11, 7, 13, 15, 1, 3, 14, 5, 2, 8, 4],
+         [3, 15, 0, 6, 10, 1, 13, 8, 9, 4, 5, 11, 12, 7, 2, 14]],
+ 
+        [[2, 12, 4, 1, 7, 10, 11, 6, 8, 5, 3, 15, 13, 0, 14, 9],
+         [14, 11, 2, 12, 4, 7, 13, 1, 5, 0, 15, 10, 3, 9, 8, 6],
+         [4, 2, 1, 11, 10, 13, 7, 8, 15, 9, 12, 5, 6, 3, 0, 14],
+         [11, 8, 12, 7, 1, 14, 2, 13, 6, 15, 0, 9, 10, 4, 5, 3]],
+ 
+        [[12, 1, 10, 15, 9, 2, 6, 8, 0, 13, 3, 4, 14, 7, 5, 11],
+         [10, 15, 4, 2, 7, 12, 9, 5, 6, 1, 13, 14, 0, 11, 3, 8],
+         [9, 14, 15, 5, 2, 8, 12, 3, 7, 0, 4, 10, 1, 13, 11, 6],
+         [4, 3, 2, 12, 9, 5, 15, 10, 11, 14, 1, 7, 6, 0, 8, 13]],
+ 
+        [[4, 11, 2, 14, 15, 0, 8, 13, 3, 12, 9, 7, 5, 10, 6, 1],
+         [13, 0, 11, 7, 4, 9, 1, 10, 14, 3, 5, 12, 2, 15, 8, 6],
+         [1, 4, 11, 13, 12, 3, 7, 14, 10, 15, 6, 8, 0, 5, 9, 2],
+         [6, 11, 13, 8, 1, 4, 10, 7, 9, 5, 0, 15, 14, 2, 3, 12]],
+ 
+        [[13, 2, 8, 4, 6, 15, 11, 1, 10, 9, 3, 14, 5, 0, 12, 7],
+         [1, 15, 13, 8, 10, 3, 7, 4, 12, 5, 6, 11, 0, 14, 9, 2],
+         [7, 11, 4, 1, 9, 12, 14, 2, 0, 6, 10, 13, 15, 3, 5, 8],
+         [2, 1, 14, 7, 4, 10, 8, 13, 15, 12, 9, 0, 3, 5, 6, 11]]
+    ]
+
+    #create the new bits to be substituted 
+    new_bits = ''
+    #there are 8 s boxes
+    num_s = 8
+
+    for i in range(num_s):
+        #6 bits into each 
+        x = int(R[i * 6] + R[i * 6 + 5], 2)
+        y = int(R[i * 6 + 1:i * 6 + 5], 2)
+        #4 bits out of each 
+        new_bits += format(s_box[i][x][y], '04b')
+
+    # permutation table from slides 
+    P= [15, 6, 19, 20, 28, 11, 27, 16, 0, 14, 22, 25, 4, 17, 30, 9,
+                        1, 7, 23, 13, 31, 26, 2, 8, 18, 12, 29, 5, 21, 10, 3, 24]
+
+    #calculate the final f bits as a string
+    #permuate final time with P 
+    #final output is 32 bits 
+    output_bits = 32
+    f = ''.join([new_bits[P[i]] for i in range(output_bits)])
+
+    return f
 
 def main():
     ciphertext = "1100101011101101101000100110010101011111101101110011100001110011"
@@ -94,9 +174,29 @@ def main():
 
     #Step 2: DES decryption
     #ECB mode 
-    deciphered_text = des_ecb_decryption(ciphertext_bytes,key_bytes)
+    deciphered_bytes, deciphered_text = des_ecb_decryption(ciphertext_bytes,key_bytes)
 
-    print("Deciphered Message:", deciphered_text)
+    print("\nDeciphered Message:", deciphered_text)
+
+    #convert the decrypted bytes to binary 
+    deciphered_binary = ''.join(format(byte, '08b') for byte in deciphered_bytes)
+
+    #print the f function and Ln Rn for each iteration of round keys
+    print("\nf function, Ln, Rn for each n")
+
+    #split in half 
+    LnRn = deciphered_binary[:32], deciphered_binary[32:]
+    max_n = 16
+    for i in range(max_n):
+
+        #print f function for that iteration
+        f = generate_f_function(LnRn[1], round_keys[i]) 
+        print(f"n = {i + 1}: f={f}, L{i+1}={LnRn[0]}, R{i+1}={LnRn[1]}")
+
+        # Update LnRn 
+        LnRn = LnRn[1], f
+
+
 
 if __name__ == "__main__":
     main()
